@@ -27,7 +27,7 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return { "status": "ok" }
+    return {"status": "ok"}
 
 @app.get("/tasks")
 async def get_tasks():
@@ -74,5 +74,5 @@ async def delete_task(id: int):
     for ts in tasks:
         if ts["id"] == id:
             tasks.remove(ts)
-            return ts
+            return
     raise HTTPException(status_code=404, detail="Unknown id")
