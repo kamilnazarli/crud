@@ -42,10 +42,6 @@ class TaskUpdate(BaseModel):
 
 app = FastAPI()
 
-# tasks = [
-#     {"id": 1, "title": "workout", "done": False}
-# ]
-
 @app.get("/")
 async def root():
     return { "name": "Task API", "version": "1.0", "endpoints": ["/tasks"]}
