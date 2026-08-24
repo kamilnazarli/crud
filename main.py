@@ -54,17 +54,19 @@ async def root():
 async def health():
     return {"status": "ok"}
 
-# @app.get("/tasks")
-# async def get_tasks():
-#     return tasks
+@app.get("/tasks")
+async def get_tasks():
+    cursor.execute("SELECT * FROM tasks")
 
-# @app.get("/tasks/{id}")
-# async def get_task(id: int):
+    return cursor.fetchall()
 
-#     for task in tasks:
-#         if task["id"] == id:
-#             return task
-#     raise HTTPException(status_code=404, detail="Unknown id")
+@app.get("/tasks/{id}")
+async def get_task(id: int):
+    cursor.execute(f"SELECT * FROM tasks WHERE id = {id}")
+
+    if len(cursor.fetchall()) == 0:
+        raise HTTPException(status_code=404, detail="Unknown id")
+    return cursor.fetchall()
 
 # @app.post("/tasks", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
 # async def add_task(task: Task):
