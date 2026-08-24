@@ -62,11 +62,12 @@ async def get_tasks():
 
 @app.get("/tasks/{id}")
 async def get_task(id: int):
-    cursor.execute(f"SELECT * FROM tasks WHERE id = {id}")
+    cursor.execute("SELECT * FROM tasks WHERE id = ?", (id,))
 
-    if len(cursor.fetchall()) == 0:
+    task = cursor.fetchone()
+    if task is None:
         raise HTTPException(status_code=404, detail="Unknown id")
-    return cursor.fetchall()
+    return task
 
 @app.post("/tasks", status_code=status.HTTP_201_CREATED)
 async def add_task(task: Task):
@@ -78,28 +79,43 @@ async def add_task(task: Task):
     cursor.execute("SELECT * FROM tasks")
     return cursor.fetchall()[-1]
 
-# @app.put("/tasks/{id}", response_model=TaskOut)
-# async def update_task(id: int, task: TaskUpdate):
-#     if task.title is None and task.done is None:
-#         raise HTTPException(status_code=400, detail="Empty/invalid body")
-#     if task.title is not None and len(task.title.strip()) == 0:
-#         raise HTTPException(status_code=400, detail="Empty/invalid body")
+@app.put("/tasks/{id}")
+async def update_task(id: int, task: TaskUpdate):
+    if task.title is None and task.done is None:
+        raise HTTPException(status_code=400, detail="Empty/invalid body")
+    if task.title is not None and len(task.title.strip()) == 0:
+        raise HTTPException(status_code=400, detail="Empty/invalid body")
 
-#     for ts in tasks:
-#         if ts["id"] == id:
-#             if task.title is not None:
-#                 ts["title"] = task.title
-    
-#             if task.done is not None:
-#                 ts["done"] = task.done
-#             return ts
+    fields = []
+    values = []
 
-#     raise HTTPException(status_code=404, detail="Unknown id")
+    if task.title is not None:
+        fields.append("title = ?")
+        values.append(task.title)
 
-# @app.delete("/tasks/{id}", status_code=204)
-# async def delete_task(id: int):
-#     for ts in tasks:
-#         if ts["id"] == id:
-#             tasks.remove(ts)
-#             return
-#     raise HTTPException(status_code=404, detail="Unknown id")
+    if task.done is not None:
+        fields.append("done = ?")
+        values.append(task.done)
+
+    values.append(id)
+
+    cursor.execute(
+        f"UPDATE tasks SET {', '.join(fields)} WHERE id = ?",
+        values
+    )
+
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    conn.commit()
+    return task.model_dump()
+
+
+@app.delete("/tasks/{id}", status_code=204)
+async def delete_task(id: int):
+    cursor.execute("DELETE FROM tasks WHERE id = ?", (id,))
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Unknown id")
+
+    conn.commit()
+    return
