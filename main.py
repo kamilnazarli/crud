@@ -68,15 +68,15 @@ async def get_task(id: int):
         raise HTTPException(status_code=404, detail="Unknown id")
     return cursor.fetchall()
 
-# @app.post("/tasks", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
-# async def add_task(task: Task):
-#     if len(task.title) == 0 or len(task.title.strip()) == 0:
-#         raise HTTPException(status_code=400, detail="Bad Request")
-#     db_user_dict = task.model_dump()
-#     new_id = max([i["id"] for i in tasks], default=0) + 1
-#     db_user_dict.update({"id": new_id, "done": False})
-#     tasks.append(db_user_dict)
-#     return db_user_dict
+@app.post("/tasks", status_code=status.HTTP_201_CREATED)
+async def add_task(task: Task):
+    if len(task.title) == 0 or len(task.title.strip()) == 0:
+        raise HTTPException(status_code=400, detail="Bad Request")
+
+    cursor.execute("INSERT INTO tasks (title, done) VALUES (?, ?)", (task.title, False))
+    conn.commit()
+    cursor.execute("SELECT * FROM tasks")
+    return cursor.fetchall()[-1]
 
 # @app.put("/tasks/{id}", response_model=TaskOut)
 # async def update_task(id: int, task: TaskUpdate):
