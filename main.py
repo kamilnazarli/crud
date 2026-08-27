@@ -2,29 +2,30 @@ from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel, Field
 from typing import Optional
 import sqlite3
+from db import init_db
 
-conn = sqlite3.connect("tasks.db")
+# conn = sqlite3.connect("tasks.db")
 
-cursor = conn.cursor()
+# cursor = conn.cursor()
 
-cursor.execute("""
-    CREATE TABLE IF NOT EXISTS tasks(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        done BOOL 
-    )
-""")
-cursor.execute("SELECT EXISTS (SELECT 1 FROM tasks)")
+# cursor.execute("""
+#     CREATE TABLE IF NOT EXISTS tasks(
+#         id INTEGER PRIMARY KEY AUTOINCREMENT,
+#         title TEXT NOT NULL,
+#         done BOOL 
+#     )
+# """)
+# cursor.execute("SELECT EXISTS (SELECT 1 FROM tasks)")
 
-is_not_empty = cursor.fetchone()[0]
-if not is_not_empty:
-    cursor.execute("INSERT INTO tasks (title, done) VALUES (?, ?)", ("workout", True))
-    cursor.execute("INSERT INTO tasks (title, done) VALUES (?, ?)", ("programming", False))
-    cursor.execute("INSERT INTO tasks (title, done) VALUES (?, ?)", ("hiking", False))
-    conn.commit()
-    print("It is empty")
-else:
-    print("It is not empty")
+# is_not_empty = cursor.fetchone()[0]
+# if not is_not_empty:
+#     cursor.execute("INSERT INTO tasks (title, done) VALUES (?, ?)", ("workout", True))
+#     cursor.execute("INSERT INTO tasks (title, done) VALUES (?, ?)", ("programming", False))
+#     cursor.execute("INSERT INTO tasks (title, done) VALUES (?, ?)", ("hiking", False))
+#     conn.commit()
+#     print("It is empty")
+# else:
+#     print("It is not empty")
 
 
 class Task(BaseModel):
@@ -41,6 +42,8 @@ class TaskUpdate(BaseModel):
     # done: bool | None = None
 
 app = FastAPI()
+
+init_db()
 
 @app.get("/")
 async def root():
