@@ -29,3 +29,19 @@ def init_db():
                     ('Walk the dog', TRUE)
                 """)
         conn.commit()
+
+def get_all_tasks():
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM tasks")
+            res = cur.fetchall()
+        conn.commit()
+    return res
+
+def get_task_by_id(id):
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM tasks WHERE id = %s", (id,))
+            res = cur.fetchone()
+        conn.commit()
+    return res

@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel, Field
 from typing import Optional
 import sqlite3
-from db import init_db
+from db import init_db, get_all_tasks, get_task_by_id
 
 # conn = sqlite3.connect("tasks.db")
 
@@ -55,17 +55,14 @@ async def health():
 
 @app.get("/tasks")
 async def get_tasks():
-    cursor.execute("SELECT * FROM tasks")
-
-    return cursor.fetchall()
+    return get_all_tasks()
 
 @app.get("/tasks/{id}")
 async def get_task(id: int):
-    cursor.execute("SELECT * FROM tasks WHERE id = ?", (id,))
+    task = get_task_by_id(id)
 
-    task = cursor.fetchone()
     if task is None:
-        raise HTTPException(status_code=404, detail="Unknown id")
+        raise HTTPException(status_code=404, detail="Task not found")
     return task
 
 @app.post("/tasks", status_code=status.HTTP_201_CREATED)
