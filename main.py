@@ -2,31 +2,9 @@ from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel, Field
 from typing import Optional
 import sqlite3
-from db import init_db, get_all_tasks, get_task_by_id
-
-# conn = sqlite3.connect("tasks.db")
-
-# cursor = conn.cursor()
-
-# cursor.execute("""
-#     CREATE TABLE IF NOT EXISTS tasks(
-#         id INTEGER PRIMARY KEY AUTOINCREMENT,
-#         title TEXT NOT NULL,
-#         done BOOL 
-#     )
-# """)
-# cursor.execute("SELECT EXISTS (SELECT 1 FROM tasks)")
-
-# is_not_empty = cursor.fetchone()[0]
-# if not is_not_empty:
-#     cursor.execute("INSERT INTO tasks (title, done) VALUES (?, ?)", ("workout", True))
-#     cursor.execute("INSERT INTO tasks (title, done) VALUES (?, ?)", ("programming", False))
-#     cursor.execute("INSERT INTO tasks (title, done) VALUES (?, ?)", ("hiking", False))
-#     conn.commit()
-#     print("It is empty")
-# else:
-#     print("It is not empty")
-
+from db import (init_db, get_all_tasks,
+                get_task_by_id, add_new_task,
+                update_task_by_id, delete_task_by_id)
 
 class Task(BaseModel):
     title: str
@@ -69,11 +47,7 @@ async def get_task(id: int):
 async def add_task(task: Task):
     if len(task.title) == 0 or len(task.title.strip()) == 0:
         raise HTTPException(status_code=400, detail="Bad Request")
-
-    cursor.execute("INSERT INTO tasks (title, done) VALUES (?, ?)", (task.title, False))
-    conn.commit()
-    cursor.execute("SELECT * FROM tasks")
-    return cursor.fetchall()[-1]
+    return add_new_task(task.title)
 
 @app.put("/tasks/{id}")
 async def update_task(id: int, task: TaskUpdate):
@@ -86,32 +60,18 @@ async def update_task(id: int, task: TaskUpdate):
     values = []
 
     if task.title is not None:
-        fields.append("title = ?")
+        fields.append("title = %s")
         values.append(task.title)
 
     if task.done is not None:
-        fields.append("done = ?")
+        fields.append("done = %s")
         values.append(task.done)
 
     values.append(id)
 
-    cursor.execute(
-        f"UPDATE tasks SET {', '.join(fields)} WHERE id = ?",
-        values
-    )
-
-    if cursor.rowcount == 0:
-        raise HTTPException(status_code=404, detail="Task not found")
-
-    conn.commit()
-    return task.model_dump()
-
+    return update_task_by_id(fields, values)
 
 @app.delete("/tasks/{id}", status_code=204)
 async def delete_task(id: int):
-    cursor.execute("DELETE FROM tasks WHERE id = ?", (id,))
-    if cursor.rowcount == 0:
-        raise HTTPException(status_code=404, detail="Unknown id")
+    delete_task_by_id(id)
 
-    conn.commit()
-    return
